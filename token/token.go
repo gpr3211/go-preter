@@ -2,6 +2,7 @@ package token
 
 type TokenType string
 
+// Token has 2 fields Type(TokenType) and Literal(string).
 type Token struct {
 	Type    TokenType
 	Literal string
