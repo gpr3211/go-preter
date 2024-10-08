@@ -1,7 +1,6 @@
 package lexer
 
 import (
-	"fmt"
 	"testing"
 
 	"interpreter/token"

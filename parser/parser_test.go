@@ -8,7 +8,7 @@ import (
 
 func TestLetStatements(t *testing.T) {
 	input := `
-let x = 5;
+let x =  5;
 let y = 10;
 let foobar = 835;
 `
@@ -22,6 +22,7 @@ let foobar = 835;
 	if len(program.Statements) != 3 {
 		t.Fatalf("Wrong number of statements -- Expected 3 got %v", len(program.Statements))
 	}
+	checkParserErrors(t, p)
 
 	tests := []struct {
 		expectedID string
@@ -36,6 +37,18 @@ let foobar = 835;
 			return
 		}
 	}
+}
+
+func checkParserErrors(t *testing.T, p *Parser) {
+	errors := p.Errors() // exctract error array
+	if len(errors) == 0 {
+		return
+	}
+	t.Errorf("Parser has %d errors", len(errors))
+	for _, msg := range errors {
+		t.Errorf("parser error: %q", msg)
+	}
+	t.FailNow()
 }
 
 func testLetStatement(t *testing.T, s ast.Statement, name string) bool {
@@ -59,4 +72,32 @@ func testLetStatement(t *testing.T, s ast.Statement, name string) bool {
 		return false
 	}
 	return true
+}
+
+// TESTING RETURN
+
+func TestReturnStatements(t *testing.T) {
+	input := `
+return 5;
+return 10;
+return test;
+`
+	l := lexer.New(input)
+	p := New(l)
+
+	program := p.ParseProgram()
+	checkParserErrors(t, p)
+	if len(program.Statements) != 3 {
+		t.Fatalf("program.Statements not  len 3.")
+	}
+	for _, stmt := range program.Statements {
+		returnStm, ok := stmt.(*ast.ReturnStatement) // type assertion
+		if !ok {
+			t.Errorf("statement not return -- have %T", stmt)
+			continue
+		}
+		if returnStm.TokenLiteral() != "return" {
+			t.Errorf("statement not return -- have %T", returnStm.TokenLiteral())
+		}
+	}
 }
