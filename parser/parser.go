@@ -7,15 +7,33 @@ import (
 	"interpreter/token"
 )
 
+// Step 3 Pratt Parser
+type (
+	prefixParseFn func() ast.Expression
+	inflixParseFn func(ast.Expression) ast.Expression
+)
+
 // Parser has 3 fields
 //   - l *lexer.Lexer
 //   - curToken token.Token
 //   - peekToken token.Token
 type Parser struct {
-	l         *lexer.Lexer
-	curToken  token.Token // current token
-	peekToken token.Token // next token
-	errors    []string
+	l              *lexer.Lexer
+	curToken       token.Token // current token
+	peekToken      token.Token // next token
+	errors         []string
+	prefixParseFns map[token.TokenType]prefixParseFn
+	inflixParseFns map[token.TokenType]inflixParseFn
+}
+
+// registerPrefix adds a Prefix entry to the map
+func (p *Parser) registerPrefix(tokenType token.TokenType, fn prefixParseFn) {
+	p.prefixParseFns[tokenType] = fn
+}
+
+// registerInflix adds nan Inflix entry to the map
+func (p *Parser) registerInflix(tokenType token.TokenType, fn inflixParseFn) {
+	p.inflixParseFns[tokenType] = fn
 }
 
 // STEP 2 WE ADD ERROR HANDLING
