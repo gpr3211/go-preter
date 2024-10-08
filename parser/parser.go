@@ -5,12 +5,24 @@ import (
 	"interpreter/ast"
 	"interpreter/lexer"
 	"interpreter/token"
+	"strconv"
 )
 
 // Step 3 Pratt Parser
 type (
 	prefixParseFn func() ast.Expression
 	inflixParseFn func(ast.Expression) ast.Expression
+)
+
+const (
+	_           int = iota
+	LOWEST          //
+	EQUALS          // ==
+	LESSGREATER     // < or >
+	SUM             // +
+	PRODUCT         // *
+	PREFIX          // -x or !x
+	CALL            // myFunc(x)
 )
 
 // Parser has 3 fields
@@ -36,6 +48,10 @@ func (p *Parser) registerInflix(tokenType token.TokenType, fn inflixParseFn) {
 	p.inflixParseFns[tokenType] = fn
 }
 
+func (p *Parser) parseIdentifier() ast.Expression {
+	return &ast.Identifier{Token: p.curToken, Value: p.curToken.Literal}
+}
+
 // STEP 2 WE ADD ERROR HANDLING
 
 // ParseProgram constructs a root node and builds an AST.
@@ -56,6 +72,10 @@ func (p *Parser) ParseProgram() *ast.Program {
 }
 func New(l *lexer.Lexer) *Parser {
 	p := &Parser{l: l, errors: []string{}}
+
+	p.prefixParseFns = make(map[token.TokenType]prefixParseFn)
+	p.registerPrefix(token.IDENT, p.parseIdentifier)
+	p.registerPrefix(token.INT, p.parseIntegerLiteral)
 	p.nextToken() // advance both current and peek
 	p.nextToken()
 	return p
@@ -88,8 +108,31 @@ func (p *Parser) parseStatement() ast.Statement {
 	case token.RETURN:
 		return p.parseReturnStatement()
 	default:
+		return p.parseExpressionStatement()
+	}
+}
+
+// TODO
+func (p *Parser) parseExpressionStatement() *ast.ExpressionStatement {
+	stmt := &ast.ExpressionStatement{Token: p.curToken}
+
+	stmt.Expression = p.parseExpression(LOWEST) // 0 precedence.
+	if p.peekTokenIs(token.SEMICOLON) {
+		p.nextToken()
+	}
+	return stmt
+
+}
+
+// parseExpression
+func (p *Parser) parseExpression(precedence int) ast.Expression {
+	prefix := p.prefixParseFns[p.curToken.Type]
+	if prefix == nil {
 		return nil
 	}
+	left := prefix()
+	return left
+
 }
 
 // parseLetStatement parses a let statement inside parseStatment switch.
@@ -119,6 +162,18 @@ func (p *Parser) parseReturnStatement() *ast.ReturnStatement {
 		p.nextToken()
 	}
 	return stmt
+}
+
+func (p *Parser) parseIntegerLiteral() ast.Expression {
+	literal := &ast.IntegerLiteral{Token: p.curToken}
+
+	out, err := strconv.ParseInt(p.curToken.Literal, 0, 64)
+	if err != nil {
+		msg := fmt.Sprintf("failed to parse %q to integer", p.curToken.Literal)
+		p.errors = append(p.errors, msg)
+	}
+	literal.Value = out
+	return literal
 }
 
 // curTokenIs checks if the current token is a specified token.Type.

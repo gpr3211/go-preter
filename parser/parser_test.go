@@ -6,6 +6,26 @@ import (
 	"testing"
 )
 
+func TestPrefixExpression(t *testing.T) {
+	prefixTests := []struct {
+		input        string
+		operator     string
+		integerValue int64
+	}{{"!5;", "1", 5},
+		{"-15;", "-", 15},
+	}
+
+	for _, tt := range prefixTests {
+		l := lexer.New(tt.input)
+		p := New(l)
+
+		program := p.ParseProgram()
+		checkParserErrors(t, p)
+
+	}
+
+}
+
 func TestIdentifierExpression(t *testing.T) {
 	input := "foobar;"
 
@@ -35,11 +55,40 @@ func TestIdentifierExpression(t *testing.T) {
 
 }
 
+// bad test; base
+func TestIntegerLiteralExpression(t *testing.T) {
+	input := "5;"
+
+	l := lexer.New(input)
+	p := New(l)
+	program := p.ParseProgram()
+	checkParserErrors(t, p)
+
+	if len(program.Statements) != 1 {
+		t.Fatalf("not enough statements got %d", len(program.Statements))
+	}
+	stmt, ok := program.Statements[0].(*ast.ExpressionStatement)
+	if !ok {
+		t.Fatalf("F")
+	}
+	literal, ok := stmt.Expression.(*ast.IntegerLiteral)
+	if !ok {
+		t.Fatalf("exp not *ast.literalifier. got=%T", stmt.Expression)
+	}
+	if literal.Value != 5 {
+		t.Errorf("literal.Value not 5. got=%q", literal.Value)
+	}
+	if literal.TokenLiteral() != "5" {
+		t.Errorf("literal.TokenLiteral not %s. got=%s", "foobar",
+			literal.TokenLiteral())
+	}
+}
+
 func TestLetStatements(t *testing.T) {
 	input := `
-let x =  5;
-let y = 10;
-let foobar = 835;
+let x =  5
+let y = 10
+let foobar = 835
 `
 	l := lexer.New(input)
 	p := New(l) // parser

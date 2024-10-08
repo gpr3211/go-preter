@@ -47,6 +47,16 @@ func (p *Program) String() string {
 	return out.String()
 }
 
+// Integer Literals
+type IntegerLiteral struct {
+	Token token.Token
+	Value int64
+}
+
+func (il *IntegerLiteral) expressionNode()      {}
+func (il *IntegerLiteral) TokenLiteral() string { return il.Token.Literal }
+func (il *IntegerLiteral) String() string       { return il.Token.Literal }
+
 // LET
 type LetStatement struct {
 	Token token.Token // LET token
@@ -99,6 +109,28 @@ func (i *Identifier) expressionNode()      {}
 func (i *Identifier) TokenLiteral() string { return i.Token.Literal }
 func (i *Identifier) String() string {
 	return i.Value
+}
+
+// PrefixExpression
+type PrefixExpression struct {
+	Token token.Token
+	//Operator is !,-
+	Operator string
+	// Right is Expression contained in PrefixExpression
+	Right Expression
+}
+
+func (pe *PrefixExpression) expressionNode()      {}
+func (pe *PrefixExpression) TokenLiteral() string { return pe.Token.Literal }
+
+func (pe *PrefixExpression) String() string {
+	var out bytes.Buffer
+
+	out.WriteString("(")
+	out.WriteString(pe.Operator)
+	out.WriteString(pe.Right.String())
+	out.WriteString(")")
+	return out.String()
 }
 
 // ExpressionStatement
