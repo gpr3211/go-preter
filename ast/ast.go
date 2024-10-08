@@ -1,10 +1,14 @@
 package ast
 
-import "interpreter/token"
+import (
+	"bytes"
+	"interpreter/token"
+)
 
 // Node general node interface
 type Node interface {
 	TokenLiteral() string
+	String() string
 }
 
 // Statement Statement Node interface
@@ -24,13 +28,23 @@ type Program struct {
 	Statements []Statement
 }
 
-// interface method
+// TokenLiteral method on Program to satistfy Node interface.
 func (p *Program) TokenLiteral() string {
 	if len(p.Statements) > 0 {
 		return p.Statements[0].TokenLiteral()
 	} else {
 		return ""
 	}
+}
+
+// String only creates a buffer and writes the return values of each statement's String() method on it. Then returns the buffer as a string.
+//   - note. most of the work is delegate to the program Statements.
+func (p *Program) String() string {
+	var out bytes.Buffer
+	for _, s := range p.Statements {
+		out.WriteString(s.String())
+	}
+	return out.String()
 }
 
 // LET
@@ -40,8 +54,20 @@ type LetStatement struct {
 	Value Expression
 }
 
-func (i *LetStatement) statementNode()       {}
-func (i *LetStatement) TokenLiteral() string { return i.Token.Literal }
+func (ls *LetStatement) statementNode()       {}
+func (ls *LetStatement) TokenLiteral() string { return ls.Token.Literal }
+func (ls *LetStatement) String() string {
+	var out bytes.Buffer
+	out.WriteString(ls.TokenLiteral() + " ")
+	out.WriteString(ls.Name.String())
+	out.WriteString(" = ")
+
+	if ls.Value != nil {
+		out.WriteString(ls.Value.String())
+	}
+	out.WriteString(";")
+	return out.String()
+}
 
 // RETURN
 type ReturnStatement struct {
@@ -51,7 +77,19 @@ type ReturnStatement struct {
 
 func (rs *ReturnStatement) statementNode()       {} // empty, just to satisfy interface
 func (rs *ReturnStatement) TokenLiteral() string { return rs.Token.Literal }
+func (rs *ReturnStatement) String() string {
+	var out bytes.Buffer
 
+	out.WriteString(rs.TokenLiteral() + " ")
+
+	if rs.ReturnValue != nil {
+		out.WriteString(rs.ReturnValue.String())
+	}
+	out.WriteString(";")
+	return out.String()
+}
+
+// IDENT
 type Identifier struct {
 	Token token.Token // the token IDENT
 	Value string
@@ -59,3 +97,24 @@ type Identifier struct {
 
 func (i *Identifier) expressionNode()      {}
 func (i *Identifier) TokenLiteral() string { return i.Token.Literal }
+func (i *Identifier) String() string {
+	return i.Value
+}
+
+// ExpressionStatement
+//
+//	-- token.Token which every node has
+//	-- Expression field which holds ExpressionStatement(fullfills the ast.Statement interface, meaning we can add it to the Statements Slice of a Program.
+type ExpressionStatement struct {
+	Token      token.Token // first expression in a statement
+	Expression Expression
+}
+
+func (es *ExpressionStatement) statementNode()       {}
+func (es *ExpressionStatement) TokenLiteral() string { return es.Token.Literal }
+func (es *ExpressionStatement) String() string {
+	if es.Expression != nil {
+		return es.Expression.String()
+	}
+	return ""
+}
