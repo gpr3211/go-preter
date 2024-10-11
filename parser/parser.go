@@ -100,6 +100,8 @@ func New(l *lexer.Lexer) *Parser {
 	p.registerInflix(token.MINUS, p.parseInfixExpression)
 	p.registerInflix(token.SLASH, p.parseInfixExpression)
 	p.registerInflix(token.ASTERISK, p.parseInfixExpression)
+	p.registerPrefix(token.TRUE, p.parseBoolean)
+	p.registerPrefix(token.FALSE, p.parseBoolean)
 
 	p.nextToken() // advance both current and peek
 	p.nextToken()
@@ -139,6 +141,7 @@ func (p *Parser) parseStatement() ast.Statement {
 
 // TODO
 func (p *Parser) parseExpressionStatement() *ast.ExpressionStatement {
+	//	defer untrace(trace("parseExpressionStatement"))
 	stmt := &ast.ExpressionStatement{Token: p.curToken}
 
 	stmt.Expression = p.parseExpression(LOWEST) // 0 precedence.
@@ -151,6 +154,8 @@ func (p *Parser) parseExpressionStatement() *ast.ExpressionStatement {
 
 // parseExpression
 func (p *Parser) parseExpression(precedence int) ast.Expression {
+
+	//	defer untrace(trace("parseExpression"))
 	prefix := p.prefixParseFns[p.curToken.Type]
 	if prefix == nil {
 		p.noPrefixParseFnError(p.curToken.Type)
@@ -171,6 +176,8 @@ func (p *Parser) parseExpression(precedence int) ast.Expression {
 }
 
 func (p *Parser) parsePrefixExpression() ast.Expression {
+
+	//	defer untrace(trace("parsePrefixExpression"))
 	expression := &ast.PrefixExpression{
 		Token:    p.curToken,
 		Operator: p.curToken.Literal,
@@ -182,6 +189,8 @@ func (p *Parser) parsePrefixExpression() ast.Expression {
 
 // parseInfixExpression takes Left expression to constdruct an infix expression node with it. Then it assigns the precedence of the current token (operator of the infix expression) to the local var precedence.
 func (p *Parser) parseInfixExpression(left ast.Expression) ast.Expression {
+
+	//	defer untrace(trace("parseInfixExpression"))
 	expression := &ast.InfixExpression{
 		Token:    p.curToken,
 		Operator: p.curToken.Literal,
@@ -190,12 +199,14 @@ func (p *Parser) parseInfixExpression(left ast.Expression) ast.Expression {
 	precedence := p.curPrecedence()
 	p.nextToken()
 	expression.Right = p.parseExpression(precedence)
-	fmt.Printf(" Operator: %s   Left: %q  Right: %q\n", expression.Operator, expression.Left.String(), expression.Right.String())
+	//fmt.Printf(" Operator: %s   Left: %q  Right: %q\n", expression.Operator, expression.Left.String(), expression.Right.String())
 	return expression
 }
 
 // parseLetStatement parses a let statement inside parseStatment switch.
 func (p *Parser) parseLetStatement() *ast.LetStatement {
+
+	//	defer untrace(trace("parseLetStatment"))
 	stmt := &ast.LetStatement{Token: p.curToken}
 	if !p.expectPeek(token.IDENT) {
 		return nil
@@ -212,6 +223,8 @@ func (p *Parser) parseLetStatement() *ast.LetStatement {
 }
 
 func (p *Parser) parseReturnStatement() *ast.ReturnStatement {
+
+	//	defer untrace(trace("parseReturnStatement"))
 	stmt := &ast.ReturnStatement{Token: p.curToken}
 
 	p.nextToken()
@@ -224,6 +237,8 @@ func (p *Parser) parseReturnStatement() *ast.ReturnStatement {
 }
 
 func (p *Parser) parseIntegerLiteral() ast.Expression {
+
+	//	defer untrace(trace("parseIntegerLiteral"))
 	literal := &ast.IntegerLiteral{Token: p.curToken}
 
 	out, err := strconv.ParseInt(p.curToken.Literal, 0, 64)
@@ -233,6 +248,10 @@ func (p *Parser) parseIntegerLiteral() ast.Expression {
 	}
 	literal.Value = out
 	return literal
+}
+
+func (p *Parser) parseBoolean() ast.Expression {
+	return &ast.Boolean{Token: p.curToken, Value: p.curTokenIs(token.TRUE)}
 }
 
 // ERROR util
