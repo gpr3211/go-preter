@@ -6,7 +6,7 @@ import (
 )
 
 // Tests the String()
-func TestSring(t *testing.T) {
+func TestString(t *testing.T) {
 	program := *&Program{
 		Statements: []Statement{
 			&LetStatement{
