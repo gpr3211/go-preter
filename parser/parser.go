@@ -310,30 +310,37 @@ func (p *Parser) noPrefixParseFnError(t token.TokenType) {
 }
 
 // curTokenIs checks if the current token is a specified token.Type.
+
 func (p *Parser) parseFunctionLiteral() ast.Expression {
-	lit := &ast.FunctionLiteral{Token: p.curToken}
+
+	ft := &ast.FunctionLiteral{Token: p.curToken}
 	if !p.expectPeek(token.LPAREN) {
 		return nil
 	}
-	lit.Parameters = p.parseFunctionParameters()
+	ft.Parameters = p.parseFunctionParameters()
 	if !p.expectPeek(token.LBRACE) {
 		return nil
 	}
-	lit.Body = p.parseBlockStatement()
-	return lit
+
+	ft.Body = p.parseBlockStatement()
+	return ft
 }
 func (p *Parser) parseFunctionParameters() []*ast.Identifier {
+
 	identifiers := []*ast.Identifier{}
 	if p.peekTokenIs(token.RPAREN) {
 		p.nextToken()
 		return identifiers
 	}
 	p.nextToken()
+
 	ident := &ast.Identifier{Token: p.curToken, Value: p.curToken.Literal}
 	identifiers = append(identifiers, ident)
+
 	for p.peekTokenIs(token.COMMA) {
 		p.nextToken()
 		p.nextToken()
+
 		ident := &ast.Identifier{Token: p.curToken, Value: p.curToken.Literal}
 		identifiers = append(identifiers, ident)
 	}
